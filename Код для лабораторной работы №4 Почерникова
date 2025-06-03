@@ -1,0 +1,121 @@
+#include <iostream>
+#include <cmath>
+#include <string>
+using namespace std;
+
+double calculateAverage(const double measurements[30]) {
+    double sum = 0.0;
+    for (int i = 0; i < 30; ++i) {
+        sum += measurements[i];
+    }
+    return sum / 30.0;
+}
+
+double calculateTimeError(const double measurements[30]) {
+    double mean = calculateAverage(measurements);
+    double sumSquaredDeviations = 0.0;
+    for (int i = 0; i < 30; ++i) {
+        double deviation = measurements[i] - mean;
+        sumSquaredDeviations += deviation * deviation;
+    }
+    return sqrt(sumSquaredDeviations / (30 * 29));
+}
+
+double calculateGravity(double t_ms) {
+    const double h = 0.272;
+    const double v0 = 1.050;
+    double t = t_ms / 1000.0;
+    return 2.0 * (h - v0 * t) / (t * t);
+}
+
+double calculateGravityError(double t_ms, double deltaT_ms) {
+    const double h = 0.272;
+    const double v0 = 1.050;
+    const double deltaH = 0.001;
+    const double deltaV0 = 0.005;
+
+    double t = t_ms / 1000.0;
+    double deltaT = deltaT_ms / 1000.0;
+
+    double term1 = pow(1.0 / (t * t), 2);
+    double term2 = pow(1.0 / t, 2);
+    double term3 = pow((v0 * t - 2 * h) / (t * t * t), 2);
+
+    return 2 * sqrt((deltaH * deltaH) * term1 / 9 +
+                    (deltaV0 * deltaV0) * term2 / 9 +
+                    term3 * deltaT * deltaT);
+}
+
+double calculateMass(double density, double diameter) {
+    return density * M_PI * pow(diameter, 3) / 6.0;
+}
+
+struct ExperimentData {
+    string material;
+    double measurements[30];
+    double density;
+    double diameter;
+};
+
+void processExperiment(const ExperimentData& data) {
+    double t_ms = calculateAverage(data.measurements);
+    double deltaT_ms = calculateTimeError(data.measurements);
+    double g = calculateGravity(t_ms);
+    double deltaG = calculateGravityError(t_ms, deltaT_ms);
+    double mass = calculateMass(data.density, data.diameter);
+
+    cout << data.material << endl;
+    cout << "Масса шарика: " << mass << " кг" << endl;
+    cout << "Среднее время падения: " << t_ms << " мс" << endl;
+    cout << "Погрешность времени: " << deltaT_ms << " мс" << endl;
+    cout << "Ускорение свободного падения: " << g << " м/с^2" << endl;
+    cout << "Погрешность ускорения: " << deltaG << " м/с^2" << endl;
+    cout << "------------------------" << endl;
+}
+
+int main() {
+    ExperimentData experiments[] = {
+        {"Алюминий", {
+            152.776, 153.243, 153.533, 152.820, 153.449, 153.864, 153.372, 154.098,
+            152.993, 153.220, 152.910, 153.265, 153.165, 153.274, 153.258, 153.654,
+            153.535, 153.571, 152.653, 153.201, 153.151, 153.115, 152.984, 153.000,
+            152.671, 153.183, 152.691, 154.378, 153.027, 153.554
+        }, 2790, 0.01},
+        {"Латунь", {
+            153.586, 153.461, 153.103, 153.070, 153.037, 152.847, 153.107, 153.586,
+            153.166, 153.200, 153.205, 152.938, 152.913, 152.891, 153.032, 153.142,
+            153.203, 153.229, 153.402, 153.236, 153.636, 153.182, 154.250, 153.061,
+            153.085, 153.176, 153.025, 153.284, 152.855, 153.615
+        }, 8500, 0.01},
+        {"Сталь", {
+            152.734, 152.731, 152.660, 152.655, 152.640, 152.772, 152.763, 152.799,
+            152.720, 152.799, 152.780, 153.084, 152.692, 152.850, 153.504, 152.861,
+            152.784, 152.708, 152.749, 152.811, 152.724, 153.823, 152.722, 152.791,
+            152.669, 152.743, 152.703, 152.658, 152.704, 153.096
+        }, 7900, 0.01},
+        {"Дерево", {
+            154.611, 156.017, 154.099, 153.997, 154.811, 154.322, 153.996, 155.114,
+            154.689, 153.917, 154.475, 153.983, 154.369, 154.453, 154.228, 154.164,
+            154.257, 153.865, 154.119, 154.726, 154.122, 153.617, 154.535, 153.975,
+            154.428, 154.438, 154.082, 154.578, 154.589, 155.054
+        }, 700, 0.01},
+        {"Плексиглас", {
+            154.091, 153.697, 153.487, 153.675, 153.757, 153.605, 154.165, 153.854,
+            153.573, 153.401, 153.769, 154.044, 153.620, 153.804, 153.907, 154.061,
+            154.735, 153.565, 154.301, 154.389, 153.621, 153.775, 153.450, 154.115,
+            153.495, 154.290, 153.642, 153.724, 154.063, 153.816
+        }, 1180, 0.01},
+        {"Свинец", {
+            153.440, 152.809, 152.978, 153.283, 152.815, 152.866, 152.957, 153.045,
+            153.385, 153.017, 153.179, 153.323, 154.022, 154.285, 153.192, 153.105,
+            152.816, 154.573, 152.668, 153.206, 152.870, 153.921, 152.832, 153.107,
+            152.852, 153.007, 153.513, 152.984, 152.943, 153.622
+        }, 11340, 0.01}
+    };
+
+    for (const auto& experiment : experiments) {
+        processExperiment(experiment);
+    }
+
+    return 0;
+}
